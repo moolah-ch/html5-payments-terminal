@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width">
+
+        <style>
+            html {
+              margin: 0;
+              padding: 0;
+              width: 100%;
+              height: 100%;
+            }
+
+            body {
+                margin: 0px;
+                padding: 0px;
+                background-color: #333332;
+                width: 100%;
+                height: 100%;
+            }
+
+            #container {
+                background-color: #333332;
+                color: #fafafa;
+                width: 100%;
+            }
+
+            #inner {
+                padding: 12px;
+            }
+
+            .main {
+                text-align: center;
+            }
+        </style>
+        <link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.10.3.custom.min.css">
+        <link rel="stylesheet" href="css/foundation.css" />
+
+        <script src="js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+    </head>
+    <body style="background-color: #333332;">
+        <div id="container">
+            <div id="inner">
+                <div id="header">
+                    <div>
+                        <img src="img/logo.png" alt="Logo" />
+                    </div>
+                </div>
+                <div id="stage1" class="main">
+                    <br />
+                    <button class="button radius large start" data-type="product" style="width: 100%;">Sell Product</button>
+                </div>
+                <div id="stage2" class="main" style="display: none;"></div>
+                <div id="stage3" class="main" style="display: none;"></div>
+                <div id="stage5" class="main" style="display: none;"></div>
+            </div>
+        </div>
+
+        <script src="js/vendor/jquery-1.10.1.min.js"></script>
+        <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
+        <script src="js/foundation.min.js"></script>
+        <script src="js/big.js"></script>
+        <script src="js/block.js"></script>
+
+        <script>
+          var moolah = {};
+
+          var bind = function() {
+            $('.start').click(function() {
+              $.blockUI({ css: { 
+                  border: 'none', 
+                  padding: '15px', 
+                  backgroundColor: '#000', 
+                  '-webkit-border-radius': '10px', 
+                  '-moz-border-radius': '10px', 
+                  opacity: .5, 
+                  color: '#fff' 
+              } }); 
+
+              moolah.flow = $(this).attr('data-type');
+
+              stage(2);
+            });
+          };
+
+          var init = function() {
+            moolah.cart = [];
+            moolah.flow = '';
+            moolah.markup = 1;
+            moolah.products = [];
+            moolah.store = {{ store }};
+            moolah.total = {
+              bitcoin: 0,
+              dogecoin: 0,
+              litecoin: 0
+            };
+
+            moolah.guids = {
+              'bitcoin': '{{ guids.bitcoin }}',
+              'dogecoin': '{{ guids.dogecoin }}',
+              'litecoin': '{{ guids.litecoin }}'
+            };
+          };
+
+          var reset = function() {
+            moolah.flow = '';
+
+            moolah.cart = [];
+            moolah.products = [];
+
+            stage(1);
+          };
+
+          var cart = function() {
+            var html = '';
+
+            var bitcoin = new BigNumber(0);
+            var dogecoin = new BigNumber(0);
+            var litecoin = new BigNumber(0);
+
+            $(moolah.cart).each(function(k, v) {
+              html += '<a class="cart-product" data-cart="' + k + '" href="#">' + moolah.products[v]['name'] + '</a><br />';
+
+              bitcoin = bitcoin.plus(moolah.products[v]['cost_btc']);
+              dogecoin = dogecoin.plus(moolah.products[v]['cost_doge']);
+              litecoin = litecoin.plus(moolah.products[v]['cost_ltc']);
+            });
+
+            $('#bitcoin-total').text('B ' + bitcoin.toFixed(8));
+            $('#dogecoin-total').text('D ' + dogecoin.toFixed(0));
+            $('#litecoin-total').text('L ' + litecoin.toFixed(8));
+
+            moolah.total['bitcoin'] = bitcoin.toFixed(8);
+            moolah.total['dogecoin'] = dogecoin.toFixed(0);
+            moolah.total['litecoin'] = litecoin.toFixed(8);
+
+            $('#cart').html(html);
+
+            if(moolah.cart.length > 0) {
+              $('#checkout').removeClass('disabled');
+            } else {
+              $('#checkout').addClass('disabled');
+            };
+          };
+
+          var stage = function(s) {
+            switch(s) {
+              case 1:
+                $('#stage1').css('display', 'block');
+                $('#stage2').css('display', 'none');
+                $('#stage3').css('display', 'none');
+                $('#stage4').css('display', 'none');
+                $('#stage5').css('display', 'none');
+              break;
+              case 2:
+                $.post('https://moolah.ch/api/store/products', {
+                  id: moolah.store
+                }, function (data) {
+                  moolah.products = data;
+
+                  switch(moolah.flow) {
+                    case 'buy_currency':
+                      var html = '';
+                    break;
+                    case 'sell_currency':
+                      var html = '';
+                    break;
+                    case 'product':
+                      var html = '<div style="text-align: left;">\
+                      <div style="float: left; width: 75%;">\
+                        <h3 style="color: white; margin: 0px;">Cart</h3>\
+                      </div>\
+                      <div style="float: right; width: 25%; text-align: right;">\
+                        &nbsp;\
+                      </div>\
+                      <div style="clear: both;"></div>\
+                      <div id="cart">\
+                        No items in cart.\
+                      </div>\
+                      <br />\
+                      <div id="total">\
+                        <strong>Bitcoin:</strong> <span id="bitcoin-total">B 0</span><br />\
+                        <strong>Dogecoin:</strong> <span id="dogecoin-total">D 0</span><br />\
+                        <strong>Litecoin:</strong> <span id="litecoin-total">L 0</span>\
+                      </div>\
+                    </div>\
+                    <br />\
+                    <button id="checkout" class="button radius small disabled" style="width: 100%;">Checkout</button>\
+                    <br />\
+                    <div style="text-align: left;">\
+                      <div style="float: left; width: 75%;">\
+                        <h3 style="color: white; margin: 0px;">Products</h3>\
+                      </div>\
+                      <div style="float: right; width: 25%; text-align: right;">\
+                        <select id="change-currency" class="form-control">\
+                          <option value="bitcoin">Bitcoin</option>\
+                          <option value="dogecoin" selected>Dogecoin</option>\
+                          <option value="litecoin">Litecoin</option>\
+                        </select>\
+                      </div>\
+                      <div style="clear: both;"></div>\
+                    </div>\
+                    <br />\
+                    <button id="manual" class="button radius small" style="width: 100%;">Sell Manual Product</button>\
+                    <br />\
+                    <div id="products" style="width: 100%;">';
+
+                    $(moolah.products).each(function(k, v) {
+                      moolah.products[k]['cost_btc'] = new BigNumber(v['cost_btc']).times(moolah.markup).toFixed(8);
+                      moolah.products[k]['cost_doge'] = new BigNumber(v['cost_doge']).times(moolah.markup).toFixed(0);
+                      moolah.products[k]['cost_ltc'] = new BigNumber(v['cost_ltc']).times(moolah.markup).toFixed(8);
+
+                      html += '<div style="width: 200px; float: left; text-align: center;">\
+                        <img class="product" data-array-id="' + k + '" src="' + v['image'] + '" style="border: 1px solid #dfdfdf; border-radius: 5px; width: 150px;" />\
+                        <br />\
+                        <div style="margin-top: 8px;">\
+                          ( ' + v['name'] + ' )<br />\
+                          <span class="price" data-bitcoin="B ' + moolah.products[k]['cost_btc'] + '" data-dogecoin="D ' + moolah.products[k]['cost_doge'] + '" data-litecoin="L ' + moolah.products[k]['cost_ltc'] + '">D ' + moolah.products[k]['cost_doge'] + '</span>\
+                        </div>\
+                      </div>';
+                    });
+
+                    html += '<div style="clear: both;"></div>\
+                      <br />\
+                      <div>\
+                        <button id="reset" class="button radius small error" style="width: 100%;">Start Over</button>\
+                      </div>\
+                    </div>\
+                    <div id="dialog-form" title="Sell Manual Product">\
+                    <form>\
+                    <fieldset>\
+                      <label for="manual_name">Name</label>\
+                      <input type="text" name="manual_name" id="manual_name" class="text ui-widget-content ui-corner-all">\
+                      <label for="manual_amount">Amount</label>\
+                      <input type="text" name="manual_amount" id="manual_amount" value="" class="text ui-widget-content ui-corner-all">\
+                      <label for="manual_currency">Currency</label>\
+                      <select id="manual_currency" name="manual_currency" class="text ui-widget-content ui-corner-all">\
+                      <option value="BTC">BTC</option>\
+                      <option value="DOGE">DOGE</option>\
+                      <option value="LTC">LTC</option>\
+                      <option value="AUD">AUD</option>\
+                      <option value="CAD">CAD</option>\
+                      <option value="EUR">EUR</option>\
+                      <option value="GBP">GBP</option>\
+                      <option value="USD">USD</option>\
+                      </select>\
+                    </fieldset>\
+                    </form>\
+                  </div>';
+
+                    break;
+                  };
+
+                  $('#stage2').html(html);
+
+                  $( "#dialog-form" ).dialog({
+                    autoOpen: false,
+                    height: 300,
+                    width: 350,
+                    modal: true,
+                    buttons: {
+                      "Checkout": function() {
+                          $( this ).dialog( "close" );
+
+                          stage(4);
+                        }
+                      },
+                      Cancel: function() {
+                        $( this ).dialog( "close" );
+                      },
+                    close: function() {
+                      allFields.val( "" ).removeClass( "ui-state-error" );
+                    }
+                  });
+
+                  $('#manual').unbind('click');
+                  $('#manual').click(function() {
+                    $( "#dialog-form" ).dialog( "open" );
+                  });
+
+                  $('#reset').unbind('click');
+                  $('#reset').click(function() {
+                    location.reload();
+                  });
+
+                  $('.product').unbind('click');
+                  $('.product').click(function() {
+
+                    moolah.cart.push($(this).attr('data-array-id'));
+
+                    cart();
+                  });
+
+                  $('#checkout').unbind('click');
+                  $('#checkout').click(function() {
+                    stage(3);
+                  });
+
+                  $('#change-currency').unbind('change');
+                  $('#change-currency').bind('change', function() {
+                    var currency = $('#change-currency :selected').val();
+
+                    $('#products').find('.price').each(function() {
+                      $(this).text($(this).attr('data-' + currency));
+                    });
+                  });
+
+                  $('#stage1').toggle("fade", {}, 400, function() {
+                    $('#stage1').css('display', 'none');
+
+                    $('#stage2').css('display', 'block');
+
+                    $.unblockUI();
+                  });
+                });
+              break;
+              case 3:
+                $.blockUI({ css: { 
+                    border: 'none', 
+                    padding: '15px', 
+                    backgroundColor: '#000', 
+                    '-webkit-border-radius': '10px', 
+                    '-moz-border-radius': '10px', 
+                    opacity: .5, 
+                    color: '#fff' 
+                } });
+
+                var html = '<div style="text-align: left;">\
+                  <div style="float: left; width: 75%;">\
+                    <h3 style="color: white; margin: 0px;">Cart</h3>\
+                  </div>\
+                  <div style="float: right; width: 25%; text-align: right;">\
+                    &nbsp;\
+                  </div>\
+                  <div style="clear: both;"></div>\
+                  <div id="cart">';
+
+                $(moolah.cart).each(function(k, v) {
+                  html += '<a class="cart-product" data-cart="' + k + '" href="#">' + moolah.products[v]['name'] + '</a><br />';
+                });
+
+                html += '</div>\
+                  <br />\
+                  <div id="total">\
+                    <strong>Bitcoin:</strong> <span id="bitcoin-total">B '+ moolah.total['bitcoin'] + '</span><br />\
+                    <strong>Dogecoin:</strong> <span id="dogecoin-total">D '+ moolah.total['dogecoin'] + '</span><br />\
+                    <strong>Litecoin:</strong> <span id="litecoin-total">L '+ moolah.total['litecoin'] + '</span>\
+                  </div>\
+                </div>\
+                <br />\
+                <div style="text-align: center;">\
+                  <button id="pay-bitcoin" class="button radius" style="width: 100%;">Pay by Bitcoin</button>\
+                  <br />\
+                  <button id="pay-dogecoin" class="button radius" style="width: 100%;">Pay by Dogecoin</button>\
+                  <br />\
+                  <button id="pay-litecoin" class="button radius" style="width: 100%;">Pay by Litecoin</button>\
+                </div>';
+
+                $('#stage3').html(html);
+
+                $('#pay-bitcoin').unbind('click');
+                $('#pay-dogecoin').unbind('click');
+                $('#pay-litecoin').unbind('click');
+
+                $('#pay-bitcoin').click(function() {
+                  moolah.method = 'bitcoin';
+                  stage(5);
+                });
+
+                $('#pay-dogecoin').click(function() {
+                  moolah.method = 'dogecoin';
+                  stage(5);
+                });
+
+                $('#pay-litecoin').click(function() {
+                  moolah.method = 'litecoin';
+                  stage(5);
+                });
+
+                $('#bitcoin-total').html('B ' + moolah.total['bitcoin']);
+                $('#dogecoin-total').html('D ' + moolah.total['dogecoin']);
+                $('#litecoin-total').html('L ' + moolah.total['litecoin']);
+
+                $('#stage2').toggle("fade", {}, 400, function() {
+                  $('#stage2').css('display', 'none');
+                  $('#stage3').css('display', 'block');
+
+                  $.unblockUI();
+                });
+              break;
+              case 4:
+                /* implement manual checkout */
+              break;
+              case 5:
+                $.blockUI({ css: { 
+                    border: 'none', 
+                    padding: '15px', 
+                    backgroundColor: '#000', 
+                    '-webkit-border-radius': '10px', 
+                    '-moz-border-radius': '10px', 
+                    opacity: .5, 
+                    color: '#fff' 
+                } });
+
+                $.post('https://moolah.ch/api/store/transaction', {
+                  store: moolah.store,
+                  cart: JSON.stringify(moolah.cart),
+                  currency: moolah.method,
+                  amount: moolah.total[moolah.method]
+                }, function(d) {
+                  var tx = d;
+
+                  var currency;
+
+                  switch(moolah.method) {
+                    case 'bitcoin':
+                      currency = 'BTC';
+                    break;
+                    case 'dogecoin':
+                      currency = 'DOGE';
+                    break;
+                    case 'litecoin':
+                      currency = 'LTC';
+                    break;
+                  };
+
+                  $.get('https://moolah.ch/api/pay', {
+                    guid: moolah.guids[moolah.method],
+                    currency: currency,
+                    amount: moolah.total[moolah.method],
+                    return: '0',
+                    product: 'T_' + tx
+                  }, function(c) {
+                    var html = '<br />\
+                    <div style="text-align: left;">\
+                      <strong>Status</strong><br />\
+                      <span id="status">Awaiting payment.</span>\
+                    </div>\
+                    <div id="how-to-pay">\
+                    <br />\
+                    <div style="text-align: center;">\
+                      <img src="http://chart.apis.google.com/chart?chs=400x400&cht=qr&chl=' + moolah.method + ':' + c['address'] + '?amount=' + c['amount'] + '" style="border-radius: 5px; border: 1px solid #dfdfdf; width: 400px;" />\
+                    </div>\
+                    <br />\
+                    <strong>Amount</strong><br />\
+                    ' + c['amount'] + ' '+ currency + '<br />\
+                    <br />\
+                    <strong>Send To</strong><br />\
+                    ' + c['address'] + '</div>';
+
+                    $('#stage5').html(html);
+
+                    moolah.check = 'https://moolah.ch/api/pay/check/' + c['tx'];
+
+                    moolah.status = window.setInterval(function() {
+                      $.get(moolah.check, function(a) {
+                        if(a.status == 'complete') {
+                          $('#status').text('Payment received!');
+
+                          $('#how-to-pay').remove();
+
+                          window.clearInterval(moolah.status);
+                        } else if(a.status == 'cancelled') {
+                          $('#status').text('Transaction cancelled.');
+                        } else {
+                          $('#status').text('Awaiting payment.');
+                        };
+                      });
+                    }, 5000);
+
+                    $('#stage3').toggle("fade", {}, 400, function() {
+                      $('#stage3').css('display', 'none');
+                      $('#stage5').css('display', 'block');
+
+                      $.unblockUI();
+                    });
+                  });
+                });
+              break;
+            };
+          };
+
+          $(document).ready(function() {
+            $(document).foundation();
+
+            bind();
+            init();
+          });
+        </script>
+    </body>
+</html>
