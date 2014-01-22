@@ -109,15 +109,6 @@
             };
           };
 
-          var reset = function() {
-            moolah.flow = '';
-
-            moolah.cart = [];
-            moolah.products = [];
-
-            stage(1);
-          };
-
           var cart = function() {
             var html = '';
 
@@ -361,9 +352,16 @@
                   <button id="pay-dogecoin" class="button radius" style="width: 100%;">Pay by Dogecoin</button>\
                   <br />\
                   <button id="pay-litecoin" class="button radius" style="width: 100%;">Pay by Litecoin</button>\
-                </div>';
+                </div>\
+                <hr />\
+                <button id="reset" class="button radius small error" style="width: 100%;">Start Over</button>';
 
                 $('#stage3').html(html);
+
+                $('#reset').unbind('click');
+                $('#reset').click(function() {
+                  location.reload();
+                });
 
                 $('#pay-bitcoin').unbind('click');
                 $('#pay-dogecoin').unbind('click');
@@ -453,7 +451,9 @@
                     ' + c['amount'] + ' '+ currency + '<br />\
                     <br />\
                     <strong>Send To</strong><br />\
-                    ' + c['address'] + '</div>';
+                    ' + c['address'] + '</div>\
+                    <hr />\
+                    <button id="reset" class="button radius small error" style="width: 100%;">Start Over</button>';
 
                     $('#stage5').html(html);
 
@@ -474,6 +474,11 @@
                         };
                       });
                     }, 5000);
+
+                    $('#reset').unbind('click');
+                    $('#reset').click(function() {
+                      location.reload();
+                    });
 
                     $('#stage3').toggle("fade", {}, 400, function() {
                       $('#stage3').css('display', 'none');
